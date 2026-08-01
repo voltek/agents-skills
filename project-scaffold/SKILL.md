@@ -11,6 +11,11 @@ description: Bootstraps a new, empty Android project — dependencies, folder sk
 - Coil
 - Navigation Compose
 - Turbine, MockK, kotlinx-coroutines-test
+- Add dependencies via the Gradle Version Catalog (`libs.versions.toml`) if
+  the project already has one (Android Studio's default template does) —
+  do not hardcode version strings directly in build.gradle.kts.
+- Use KSP (Kotlin Symbol Processing) for Hilt and Room annotation processing,
+  not the older KAPT.
 - Always verify the latest stable version on the internet before adding —
   do not rely on a remembered version number.
 
@@ -27,27 +32,29 @@ In the test source set (not main):
 
 ## Hilt setup
 - `Application` class annotated `@HiltAndroidApp`, registered in the manifest.
-- Do not create empty/placeholder Hilt modules (e.g. NetworkModule, DatabaseModule)
-  yet — those get created organically by `new-repository-impl` when a real
-  binding is actually needed. Creating them empty now would just be guessing
-  ahead of real requirements.
+- Do not create empty/placeholder Hilt modules (e.g. Network/Database modules)
+  yet — bindings should be created later, when a real one is actually needed
+  by feature work, not guessed in advance.
 
 ## Theme
-Read `docs/project/DESIGN.md` — it contains the real color, typography, and
-spacing tokens for this project. Do not invent values; every color and font
-must come from that file.
+Read the project's `docs/project/DESIGN.md` — it contains the real color,
+typography, and spacing tokens for this specific project. Do not invent
+values; every color and font must come from that file.
 
 Create in `ui/theme/`:
 - `Color.kt` — all colors from DESIGN.md's `colors` section
 - `Type.kt` — Typography mapped to Material3 text roles (displayLarge,
   headlineLarge, bodyLarge, etc.) using DESIGN.md's `typography` section
 - `Shape.kt` — corner radius values from DESIGN.md's `rounded` section
-- `Theme.kt` — the `GameStackTheme` Composable wrapping MaterialTheme.
-  Dark-only for MVP (see CLAUDE.md Tier 1) — do not build a Light ColorScheme.
+- `Theme.kt` — the app's Theme Composable, named after the project
+  (e.g. `{ProjectName}Theme`), wrapping MaterialTheme.
+
+Check the project's CLAUDE.md for whether it requires Dark-only, Light-only,
+or both themes — do not assume either. Build exactly what's documented there.
 
 ## MainDispatcherRule
-Create in `core/testing/MainDispatcherRule.kt` (test source set) — used by
-every ViewModel test via the `write-tests` skill:
+Create in `core/testing/MainDispatcherRule.kt` (test source set) — the
+standard rule used across ViewModel unit tests in this project:
 
 ```kotlin
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -68,8 +75,9 @@ class MainDispatcherRule(
 ```
 
 ## UiText
-Create in `core/presentation/UiText.kt` — used across ViewModels/Screens per
-CLAUDE.md's rule of never hardcoding UI strings:
+Create in `core/presentation/UiText.kt` — for projects following a rule of
+never hardcoding UI strings directly (check the project's CLAUDE.md for this
+convention):
 
 ```kotlin
 sealed class UiText {
@@ -101,10 +109,29 @@ Check the project's CLAUDE.md for a documented navigation structure
 exactly as documented there. If none exists, skip this step entirely —
 do not assume or invent a navigation pattern.
 
+## MainActivity
+Android Studio's default template pre-populates `MainActivity.kt` with a
+placeholder Composable and an unrelated sample theme. Replace its content
+(do not delete the file) so that it:
+- Wraps its content in the Theme Composable created above
+- Hosts the NavHost from "Root navigation" if one was built, or a simple
+  empty placeholder Composable if no navigation was documented yet
+- Removes the default sample/placeholder content entirely
+
+## Secrets safety check (verification only — no new code yet)
+Confirm `local.properties` is listed in `.gitignore` (Android Studio's
+default template usually includes this — verify, don't assume). This
+project will likely store API credentials there later; checking this now,
+before any secret exists, prevents an accidental leak later.
+
 ## Quality criteria
 - All dependencies use the latest verified stable version — not a remembered one.
 - Theme colors/typography/shapes come exclusively from DESIGN.md — no invented values.
-- No Light ColorScheme is created (dark-only for MVP, per CLAUDE.md).
+- Theme mode (dark/light/both) matches exactly what the project's CLAUDE.md
+  specifies — never assumed.
 - Root navigation is only implemented if CLAUDE.md documents one — never invented.
+- Before considering this skill complete, run `./gradlew build`. Do not report
+  success if the build fails — surface the error and fix it, or ask for help
+  if the fix isn't obvious.
 - This skill runs once per project. If invoked on a project that already has
   Theme/Hilt/folders set up, stop and ask before overwriting anything.
