@@ -1,6 +1,7 @@
 ---
 name: discovery-feature
-description: Asks a series of guided questions to turn a vague feature idea into a feature-scoped Spec draft, aware of existing project architecture. Use when adding a new feature to an existing project (not for starting a new project — see the `discovery` skill for that).
+description: Asks a series of guided questions to turn a vague feature idea into a feature-scoped Spec draft, aware of existing project architecture. Use when adding a feature to a project that already has a Spec and a CLAUDE.md — not for defining a brand-new project from zero.
+compatibility: Requires the target project to have a CLAUDE.md (or equivalent Constitution document).
 ---
 
 ## Questions
@@ -17,6 +18,10 @@ description: Asks a series of guided questions to turn a vague feature idea into
 - Don't ask all questions at once.
 - Prefer closed/multiple-choice questions when the ambiguity is concrete;
   open questions when genuine exploration is needed.
+- If the agent has a native structured-question tool available (e.g., Claude
+  Code's AskUserQuestion), prefer it for closed/multiple-choice questions.
+  Otherwise, ask directly in the conversation — this is a preference, not a
+  hard requirement, so the skill works on any tool.
 - Cross-check answers against the project's CLAUDE.md — if something conflicts
   with an existing Tier 1 rule, surface that conflict explicitly before proceeding.
 
@@ -28,9 +33,13 @@ why you're asking beyond the standard list, so it's clear this is a deliberate
 addition, not an inconsistent process.
 
 ## When to stop
-- Stop once there's enough clarity to move directly to Work Decomposition
-  (invoking `new-feature`). Unlike project-level discovery, there is no
-  Technical Blueprinting phase here — the project's architecture already exists.
+- Stop once there's enough clarity to move directly to implementation
+  (invoking `new-feature`). There is no architecture/blueprinting phase here —
+  the project's stack and layering already exist and are governed by CLAUDE.md.
+  This skill decides *what* the feature is, never *how* it's built.
+- Do not use this skill for the four MVP screens (Home, Search, Library,
+  Detail): they are already fully specced and have approved designs. Running
+  discovery on them re-opens settled decisions.
 
 ## Result
 A feature-scoped Spec draft with this structure:
@@ -41,6 +50,10 @@ A feature-scoped Spec draft with this structure:
 - Touches existing systems? (yes/no + what)
 - Data: new or reused
 - Pending / Open Questions
+
+Append this as a new section to the project's master Spec file — do not
+create a separate spec file per feature. One source of truth avoids the
+same drift risk that multiple scattered documents would create.
 
 ## Quality criteria
 - The "touches existing systems" answer is explicit — never left ambiguous,
